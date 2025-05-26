@@ -14,9 +14,10 @@ class GenerateDocumentService {
   static WORD_OUTPUT_DIR = path.join(GenerateDocumentService.GENERATED_DIR, "word");
   static PDF_OUTPUT_DIR = path.join(GenerateDocumentService.GENERATED_DIR, "pdf");
 
-  constructor() {
+  constructor(userEmail) {
+    this.currentUserEmail = userEmail;
+  
     console.log("GenerateDocumentService initialized", GenerateDocumentService.GENERATED_DIR);
-    // Ensure the directory for generated files exists
     if (!fs.existsSync(GenerateDocumentService.GENERATED_DIR)) {
       fs.mkdirSync(GenerateDocumentService.GENERATED_DIR, { recursive: true });
     }
@@ -24,6 +25,7 @@ class GenerateDocumentService {
     this.tempFiles = new Map();
     this.processingOutputNames = new Map();
   }
+  
 
   // Initialize tracking for a new process
   initializeProcessTracking(processingId) {
@@ -64,9 +66,10 @@ class GenerateDocumentService {
     this.initializeProcessTracking(processingId);
     const hub = global.app?.get("documentGenerationHub");
     const emailTriggerId = await this.recordUploadInEmailTrigger(
-      global.userEmail,
+      this.currentUserEmail,
       file.originalname
     );
+    
 
     // Validate Excel file
     let workbook;
@@ -274,7 +277,7 @@ class GenerateDocumentService {
           emailTemplate: emailTemplateContent,
           to: rowData[constants.emailField],
           clientFileName: `${rowData[constants.firstNameField]}_${rowData[constants.lastNameField]
-            }_Document.pdf`,
+            }.pdf`,
         };
 
         generatedFiles.push(documentInfo);
@@ -918,7 +921,7 @@ class GenerateDocumentService {
   }
 
   buildAttachmentFileName(rowData) {
-    return `${rowData[constants.employeeNumberField]}_${rowData[constants.firstNameField]}_Document`;
+    return `${rowData[constants.employeeNumberField]}_${rowData[constants.firstNameField]}_${rowData[constants.lastNameField]}`;
   }
 
   convertToLinuxPath(winPath) {

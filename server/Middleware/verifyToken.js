@@ -44,8 +44,7 @@ const verifyToken = (req, res, next) => {
       } else {
         // console.log("Token successfully verified.");
         const email = decoded.preferred_username || decoded.email;
-        global.userEmail = email;
-
+        req.userEmail = email;
         if (!email) {
           return res.status(400).send("Email not found in token.");
         }
@@ -60,7 +59,6 @@ const verifyToken = (req, res, next) => {
             })
             .onConflict("email")
             .merge({ active: 1 });
-
         } catch (dbErr) {
           console.error("Error inserting into Users table:", dbErr);
         }
