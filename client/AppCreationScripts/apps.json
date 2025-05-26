@@ -1,0 +1,45 @@
+{
+  "Sample": {
+    "Title": "A React single-page application calling Microsoft Graph API using MSAL.js (w/ AAD v2 endpoint)",
+    "Level": 100,
+    "Client": "SinglePageApplication"
+  },
+  "AppRegistrations": [
+    {
+      "x-ms-id": "ReactSpa",
+      "x-ms-name": "ms-identity-javascript-react-spa",
+      "x-ms-version": "2.0",
+      "replyUrlsWithType": [
+        {
+          "url": "__CLIENT_ORIGIN__",
+          "type": "Spa"
+        }
+      ],
+      "requiredResourceAccess": [
+        {
+          "x-ms-resourceAppName": "Microsoft Graph",
+          "resourceAppId": "00000003-0000-0000-c000-000000000000",
+          "resourceAccess": [
+            {
+              "id": "e1fe6dd8-ba31-4d61-89e7-88639da4683d",
+              "type": "Scope",
+              "x-ms-name": "user.read"
+            }
+          ]
+        }
+      ],
+      "codeConfigurations": [
+        {
+          "settingFile": "/src/authConfig.js",
+          "replaceTokens": {
+            "appId": "__REACT_APP_CLIENT_ID__",
+            "tenantId": "__REACT_APP_TENANT_ID__",
+            "authorityEndpointHost": "__REACT_APP_AUTHORITY__",
+            "redirectUri": "__REACT_APP_REDIRECT_URI__",
+            "msgraphEndpointHost": "__REACT_APP_GRAPH_ME_ENDPOINT__"
+          }
+        }
+      ]
+    }
+  ]
+}

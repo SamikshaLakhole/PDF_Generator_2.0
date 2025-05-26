@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.modal {
+    @apply fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm
+}
+
+.cancel-btn {
+    @apply px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50
+}
+
+.success-btn {
+    @apply bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md
+}
+
+.template-labels {
+    @apply w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-600
+}
+
+.outer-div {
+    @apply mx-auto bg-white rounded-lg shadow-sm p-6
+}
