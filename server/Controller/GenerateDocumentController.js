@@ -27,11 +27,10 @@ class GenerateDocumentController {
     const { password } = req.body;
     console.log("Verifying password...");
 
+    const service = new GenerateDocumentService(req.userEmail);
+
     try {
-      await this.generateDocumentService.verifyExcelPassword(
-        req.file,
-        password
-      );
+      await service.verifyExcelPassword(req.file, password);
 
       const processingId = Date.now().toString();
 
@@ -42,7 +41,7 @@ class GenerateDocumentController {
       });
       console.log("Password verified, document generation started");
 
-      const processPromise = this.generateDocumentService
+      const processPromise = service
         .processExcelAndGenerateDocuments(req.file, password, processingId)
         .then((result) => {
           this.documentProcesses.set(processingId, {
@@ -208,9 +207,7 @@ class GenerateDocumentController {
         message: "Document generation process is being cancelled...",
       });
       try {
-        await this.generateDocumentService.cleanupCancelledProcess(
-          processingId
-        );
+        await service.cleanupCancelledProcess(processingId);
         this.documentProcesses.set(processingId, {
           ...process,
           status: "CANCELLED",
@@ -254,7 +251,7 @@ class GenerateDocumentController {
       }
     }
   };
-  
+
   listGeneratedPDFs = async (_req, res) => {
     try {
       const pdfs = await this.generateDocumentService.listGeneratedPDFs();
@@ -334,7 +331,10 @@ class GenerateDocumentController {
   getErrorReport(req, res) {
     try {
       const fileName = req.params.filename;
-      const errorFileFolder = path.join(GenerateDocumentService.GENERATED_DIR, "error");
+      const errorFileFolder = path.join(
+        GenerateDocumentService.GENERATED_DIR,
+        "error"
+      );
       const errorFilePath = path.join(errorFileFolder, fileName);
       if (fs.existsSync(errorFilePath)) {
         return res.download(errorFilePath);
