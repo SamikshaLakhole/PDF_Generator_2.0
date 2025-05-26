@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  web:
+    platform: linux/amd64  # ✅ Place it here, not inside build
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    restart: always
