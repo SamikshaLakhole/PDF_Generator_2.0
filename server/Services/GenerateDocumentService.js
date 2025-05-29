@@ -11,13 +11,23 @@ const EmailTriggerQueries = require("../Model/GenerateDocumentModel");
 
 class GenerateDocumentService {
   static GENERATED_DIR = path.resolve(__dirname, "..", "Generated_Documents");
-  static WORD_OUTPUT_DIR = path.join(GenerateDocumentService.GENERATED_DIR, "word");
-  static PDF_OUTPUT_DIR = path.join(GenerateDocumentService.GENERATED_DIR, "pdf");
+
+  static WORD_OUTPUT_DIR = path.join(
+    GenerateDocumentService.GENERATED_DIR,
+    "word"
+  );
+  static PDF_OUTPUT_DIR = path.join(
+    GenerateDocumentService.GENERATED_DIR,
+    "pdf"
+  );
 
   constructor(userEmail) {
     this.currentUserEmail = userEmail;
-  
-    console.log("GenerateDocumentService initialized", GenerateDocumentService.GENERATED_DIR);
+
+    console.log(
+      "GenerateDocumentService initialized",
+      GenerateDocumentService.GENERATED_DIR
+    );
     if (!fs.existsSync(GenerateDocumentService.GENERATED_DIR)) {
       fs.mkdirSync(GenerateDocumentService.GENERATED_DIR, { recursive: true });
     }
@@ -25,7 +35,12 @@ class GenerateDocumentService {
     this.tempFiles = new Map();
     this.processingOutputNames = new Map();
   }
-  
+
+  ensureDirectoryExists(dirPath) {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+  }
 
   // Initialize tracking for a new process
   initializeProcessTracking(processingId) {
@@ -69,7 +84,6 @@ class GenerateDocumentService {
       this.currentUserEmail,
       file.originalname
     );
-    
 
     // Validate Excel file
     let workbook;
@@ -217,7 +231,8 @@ class GenerateDocumentService {
         );
         if (!template) {
           throw new Error(
-            `Template '${rowData[constants.templateNameField]
+            `Template '${
+              rowData[constants.templateNameField]
             }' not found in database`
           );
         }
@@ -225,7 +240,8 @@ class GenerateDocumentService {
         // Check if email template path exists in the template object
         if (!template.email_template_path) {
           throw new Error(
-            `Email template path is not defined for template '${rowData[constants.templateNameField]
+            `Email template path is not defined for template '${
+              rowData[constants.templateNameField]
             }'`
           );
         }
@@ -276,8 +292,9 @@ class GenerateDocumentService {
           pdfPath,
           emailTemplate: emailTemplateContent,
           to: rowData[constants.emailField],
-          clientFileName: `${rowData[constants.firstNameField]}_${rowData[constants.lastNameField]
-            }.pdf`,
+          clientFileName: `${rowData[constants.firstNameField]}_${
+            rowData[constants.lastNameField]
+          }.pdf`,
         };
 
         generatedFiles.push(documentInfo);
@@ -287,8 +304,9 @@ class GenerateDocumentService {
         if (hub) {
           hub.documentGenerated(processingId, {
             name: path.basename(pdfPath),
-            employee: `${rowData[constants.firstNameField]} ${rowData[constants.lastNameField]
-              }`,
+            employee: `${rowData[constants.firstNameField]} ${
+              rowData[constants.lastNameField]
+            }`,
             employeeNumber: rowData[constants.employeeNumberField],
           });
         }
@@ -499,20 +517,23 @@ class GenerateDocumentService {
 
   formatEmployeeName(rowData) {
     return rowData[constants.employeeNumberField]
-      ? `${rowData[constants.firstNameField] || ""} ${rowData[constants.lastNameField] || ""
-      } (${rowData[constants.employeeNumberField]})`
+      ? `${rowData[constants.firstNameField] || ""} ${
+          rowData[constants.lastNameField] || ""
+        } (${rowData[constants.employeeNumberField]})`
       : "Unknown Employee";
   }
 
   // Create safe filename
   createSafeFileName(rowData) {
-    const rawName = `${rowData[constants.employeeNumberField]}}_${rowData[constants.firstNameField]
-      }_${rowData[constants.lastNameField]}`;
+    const rawName = `${rowData[constants.employeeNumberField]}_${
+      rowData[constants.firstNameField]
+    }_${rowData[constants.lastNameField]}`;
     return rawName
       .trim()
       .replace(/[^a-zA-Z0-9]/g, "_")
       .replace(/_+$/, "");
   }
+  
 
   replacePlaceholdersInString(content, data) {
     let result = content;
@@ -606,7 +627,7 @@ class GenerateDocumentService {
         if (
           !formattedEmail.includes(ccMatch[1]) ||
           formattedEmail.indexOf(ccMatch[1]) ===
-          formattedEmail.indexOf(ccMatch[0])
+            formattedEmail.indexOf(ccMatch[0])
         ) {
           formattedEmail = formattedEmail.replace(
             /(\bBody\s*:\s*)/i,
@@ -687,7 +708,8 @@ class GenerateDocumentService {
       errors.push(`Missing Template_Name for Employee ${employeeId}`);
     } else {
       console.log(
-        `Template_Name '${rowData[constants.templateNameField]
+        `Template_Name '${
+          rowData[constants.templateNameField]
         }' found for Employee ${employeeId}`
       );
     }
@@ -711,25 +733,19 @@ class GenerateDocumentService {
 
   // Process a single row of data
   async processRowData(rowData, processingId, emailTriggerId) {
-    console.log("inside processRowData");
-    if (this.isProcessCancelled(processingId)) {
-      throw new Error("Document generation was cancelled by user request");
-    }
-    // Use provided template or fetch it
-    const template = await TemplateModel.getTemplateByTitle(rowData[constants.templateNameField]);
-    console.log(`after template ${template.word_file_path}`);
-    console.log(`after template ${template.email_template_path}`);
-
+    const template = await TemplateModel.getTemplateByTitle(
+      rowData[constants.templateNameField]
+    );
     if (!template) {
       throw new Error(
-        `Template '${rowData[constants.templateNameField]
+        `Template '${
+          rowData[constants.templateNameField]
         }' not found in the database`
       );
     }
 
     try {
-      const templatePath = path.join('..',path.sep, template.word_file_path);
-      console.log(`templatePath`, templatePath);
+      const templatePath = path.join("..", path.sep, template.word_file_path);
       if (!fs.existsSync(templatePath)) {
         throw new Error(`Word template file not found`);
       }
@@ -741,19 +757,15 @@ class GenerateDocumentService {
         )
       );
 
-      console.log("about to replacePlaceholdersInDoc");
-
-      // Generate document
       const docBuffer = this.replacePlaceholdersInDoc(
         templatePath,
         cleanRowData
       );
-      console.log("about to convertDocBufferToEncryptedPdf");
-      // Convert to PDF
       const generatedPDFPath = await this.convertDocBufferToEncryptedPdf(
         docBuffer,
         rowData,
-        processingId
+        processingId,
+        emailTriggerId
       );
 
       let emailTemplateContent;
@@ -761,31 +773,30 @@ class GenerateDocumentService {
         emailTemplateContent = fs.readFileSync(templatePath, "utf-8");
       } catch (error) {
         throw new Error(
-          `Email template file for '${rowData[constants.templateNameField]
-          }' not found`, error
+          `Email template file for '${
+            rowData[constants.templateNameField]
+          }' not found`,
+          error
         );
       }
 
-      // This will add "To:" field to the email template
       emailTemplateContent = this.replacePlaceholdersInString(
         emailTemplateContent,
         cleanRowData
       );
 
-      // Save email template
       const emailName = this.createSafeFileName(rowData);
-
       const emailFilePath = path.join(
-        this.getEmailTemplateOutputDirectory(),
+        this.getEmailTemplateOutputDirectory(emailTriggerId),
         `${emailName}.txt`
       );
+      this.ensureDirectoryExists(path.dirname(emailFilePath));
       fs.writeFileSync(emailFilePath, emailTemplateContent);
 
       if (this.tempFiles.has(processingId)) {
         this.tempFiles.get(processingId).push(emailFilePath);
       }
 
-      // Update to success status
       await this.addToEmailTriggerExtension({
         email_trigger_id: emailTriggerId,
         template_id: template.id,
@@ -795,17 +806,12 @@ class GenerateDocumentService {
 
       return generatedPDFPath;
     } catch (err) {
-      // Update to failed status
-      try {
-        await this.addToEmailTriggerExtension({
-          email_trigger_id: emailTriggerId,
-          template_id: template.id,
-          generated_pdfName: `${this.buildAttachmentFileName(rowData)}.pdf`,
-          Document_Process_Status_id: 3,
-        });
-      } catch (dbError) {
-        console.error(`Failed to update database status: ${dbError.message}`);
-      }
+      await this.addToEmailTriggerExtension({
+        email_trigger_id: emailTriggerId,
+        template_id: template.id,
+        generated_pdfName: `${this.buildAttachmentFileName(rowData)}.pdf`,
+        Document_Process_Status_id: 3,
+      });
       throw err;
     }
   }
@@ -844,7 +850,12 @@ class GenerateDocumentService {
       .replace(/^([a-zA-Z]):/, (_, drive) => `/mnt/${drive.toLowerCase()}`);
   }
 
-  async convertDocBufferToEncryptedPdf(docBuffer, rowData, processingId) {
+  async convertDocBufferToEncryptedPdf(
+    docBuffer,
+    rowData,
+    processingId,
+    emailTriggerId
+  ) {
     return new Promise((resolve, reject) => {
       this.initializeProcessTracking(processingId);
       if (this.isProcessCancelled(processingId)) {
@@ -852,12 +863,18 @@ class GenerateDocumentService {
           new Error("Document generation was cancelled by user request")
         );
       }
-      console.log("inside convertDocBufferToEncryptedPdf");
-      const wordDocumentPath = this.getGeneratedWordDocumentPath(rowData);
-      console.log(`wordDocumentPath`, wordDocumentPath);
+
+      const wordDocumentPath = this.getGeneratedWordDocumentPath(
+        rowData,
+        emailTriggerId
+      );
+      this.ensureDirectoryExists(path.dirname(wordDocumentPath));
       fs.writeFileSync(wordDocumentPath, docBuffer);
-      const convertCommand = this.getWordToPdfConversionCommand(rowData);
-      console.log(`convertCommand`, convertCommand);
+
+      const convertCommand = this.getWordToPdfConversionCommand(
+        rowData,
+        emailTriggerId
+      );
       const convertProcess = exec(convertCommand, (err, stdout, stderr) => {
         if (this.isProcessCancelled(processingId)) {
           this.cleanupFilesForProcess(processingId);
@@ -865,7 +882,6 @@ class GenerateDocumentService {
             new Error("Document generation was cancelled by user request")
           );
         }
-
         if (err) {
           console.error(
             `LibreOffice conversion failed: ${stderr || err.message}`
@@ -880,65 +896,73 @@ class GenerateDocumentService {
     });
   }
 
-  getWordToPdfConversionCommand(rowData) {
-    console.log("inside getWordToPdfConversionCommand");
-    const wordDocumentLinuxPath = this.convertToLinuxPath(this.getGeneratedWordDocumentPath(rowData));
-    console.log(`wordDocumentPath`, wordDocumentLinuxPath);
-    const pdfLinuxPath = this.getGeneratedPDFDocumentPath(rowData);
-    const pdfOutputDirectoryLinuxPath = this.convertToLinuxPath(GenerateDocumentService.PDF_OUTPUT_DIR);
-    console.log(`pdfPath`, pdfLinuxPath);
+  getWordToPdfConversionCommand(rowData, emailTriggerId) {
+    const wordDocumentLinuxPath = this.convertToLinuxPath(
+      this.getGeneratedWordDocumentPath(rowData, emailTriggerId)
+    );
+    const pdfLinuxPath = this.getGeneratedPDFDocumentPath(
+      rowData,
+      emailTriggerId
+    );
+    const pdfOutputDirectoryLinuxPath = this.convertToLinuxPath(
+      path.dirname(pdfLinuxPath)
+    );
     if (process.env.wordToPdfCommand.toLowerCase().includes("libreoffice")) {
-      const command = `${process.env.wordToPdfCommand} --headless --convert-to pdf --outdir "${pdfOutputDirectoryLinuxPath}" "${wordDocumentLinuxPath}"`
-      console.log(`about to execute [${command}]`);
-      return command;
+      return `${process.env.wordToPdfCommand} --headless --convert-to pdf --outdir "${pdfOutputDirectoryLinuxPath}" "${wordDocumentLinuxPath}"`;
     } else {
-      const command = `${process.env.wordToPdfCommand} "${wordDocumentLinuxPath}" "${pdfLinuxPath}"`;
-      console.log(`about to execute [${command}]`);
-      return command;
+      return `${process.env.wordToPdfCommand} "${wordDocumentLinuxPath}" "${pdfLinuxPath}"`;
     }
   }
 
-  getGeneratedPDFDocumentPath(rowData) {
-    return path.join(
+  getGeneratedPDFDocumentPath(rowData, emailTriggerId) {
+    const dir = path.join(
       GenerateDocumentService.PDF_OUTPUT_DIR,
-      `${this.buildAttachmentFileName(rowData)}.pdf`
+      String(emailTriggerId)
     );
+    this.ensureDirectoryExists(dir);
+    return path.join(dir, `${this.buildAttachmentFileName(rowData)}.pdf`);
   }
 
-  getGeneratedWordDocumentPath(rowData) {
-    return path.join(
+  getGeneratedWordDocumentPath(rowData, emailTriggerId) {
+    const dir = path.join(
       GenerateDocumentService.WORD_OUTPUT_DIR,
-      `${this.buildAttachmentFileName(rowData)}.docx`
+      String(emailTriggerId)
     );
+    this.ensureDirectoryExists(dir);
+    return path.join(dir, `${this.buildAttachmentFileName(rowData)}.docx`);
   }
 
-  getEmailTemplateOutputDirectory() {
-    const emailTemplateOutputDirectory = path.join(
+  getEmailTemplateOutputDirectory(emailTriggerId) {
+    const dir = path.join(
       GenerateDocumentService.GENERATED_DIR,
-      "template"
+      "template",
+      String(emailTriggerId)
     );
-    return emailTemplateOutputDirectory;
+    this.ensureDirectoryExists(dir);
+    return dir;
   }
 
   buildAttachmentFileName(rowData) {
-    return `${rowData[constants.employeeNumberField]}_${rowData[constants.firstNameField]}_${rowData[constants.lastNameField]}`;
+    return `${rowData[constants.employeeNumberField]}_${
+      rowData[constants.firstNameField]
+    }_${rowData[constants.lastNameField]}`;
   }
 
   convertToLinuxPath(winPath) {
     console.log(`Start Converting Windows path to Linux-style: ${winPath}`);
-    if (process.platform !== 'win32') {
+    if (process.platform !== "win32") {
       console.log(`Not on Windows, returning path as-is: ${winPath}`);
       return winPath; // If not on Windows, return as-is
     } else {
-      console.log(`process.platform ${process.platform}`)
+      console.log(`process.platform ${process.platform}`);
     }
 
     // If it's already a Linux-style path (starts with /), return as-is
-    if (winPath.startsWith('/')) {
+    if (winPath.startsWith("/")) {
       console.log(`Path is already Linux-style: ${winPath}`);
       return winPath;
     } else {
-      console.log(`winPath does not start with / ${winPath}`)
+      console.log(`winPath does not start with / ${winPath}`);
     }
 
     // If it's not a typical C:\ path, return as-is
@@ -946,13 +970,16 @@ class GenerateDocumentService {
       console.log(`Path is not a typical Windows path: ${winPath}`);
       return winPath;
     } else {
-      console.log(`winPath does not start with c:\\ ${winPath}`)
+      console.log(`winPath does not start with c:\\ ${winPath}`);
     }
 
     // Convert drive letter (e.g., C:\ -> /mnt/c/)
-    const linuxPath = winPath.replace(/^([a-zA-Z]):[\\/]/, (_, drive) => `/mnt/${drive.toLowerCase()}/`);
+    const linuxPath = winPath.replace(
+      /^([a-zA-Z]):[\\/]/,
+      (_, drive) => `/mnt/${drive.toLowerCase()}/`
+    );
     // Replace any remaining backslashes with forward slashes
-    const finalPath = linuxPath.replace(/\\/g, '/');
+    const finalPath = linuxPath.replace(/\\/g, "/");
     console.log(`Converted Windows path to Linux-style: ${finalPath}`);
     return finalPath;
   }
@@ -988,26 +1015,40 @@ class GenerateDocumentService {
 
   // List all generated PDFs
   async listGeneratedPDFs() {
-    const result = [];
     const walk = async (dir) => {
-      const files = await fsp.readdir(dir, { withFileTypes: true });
+      let files = [];
+      const entries = await fsp.readdir(dir, { withFileTypes: true });
 
-      for (const file of files) {
-        const fullPath = path.join(dir, file.name);
-        if (file.isDirectory()) {
-          await walk(fullPath);
-        } else if (file.name.endsWith(".pdf")) {
-          result.push({
-            name: file.name,
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          const subFiles = await walk(fullPath);
+          files = files.concat(subFiles);
+        } else if (entry.name.endsWith(".pdf")) {
+          const relativePath = path.relative(
+            GenerateDocumentService.GENERATED_DIR,
+            fullPath
+          );
+          const folder = path.dirname(relativePath);
+
+          files.push({
+            name: entry.name,
+            folder: folder === "." ? "root" : folder,
             path: fullPath,
-            folder: path.relative(GenerateDocumentService.GENERATED_DIR, dir),
+            size: (await fsp.stat(fullPath)).size,
+            created: (await fsp.stat(fullPath)).birthtime,
           });
         }
       }
+      return files;
     };
 
-    await walk(GenerateDocumentService.GENERATED_DIR);
-    return result;
+    try {
+      return await walk(GenerateDocumentService.GENERATED_DIR);
+    } catch (error) {
+      console.error("Error listing PDFs:", error);
+      return [];
+    }
   }
 
   static async findEmailTemplateFile(dir, fileName) {
@@ -1029,7 +1070,7 @@ class GenerateDocumentService {
     const txtFileName = pdfName.replace(/\.pdf$/, ".txt");
 
     const txtFilePath = await GenerateDocumentService.findEmailTemplateFile(
-      GenerateDocumentService.GENERATED_DIR,
+      path.join(GenerateDocumentService.GENERATED_DIR, "template"),
       txtFileName
     );
 
@@ -1039,6 +1080,7 @@ class GenerateDocumentService {
 
     return fs.readFileSync(txtFilePath, "utf-8");
   }
+
   static async findPDFFile(pdfName) {
     const walk = async (dir) => {
       const entries = await fsp.readdir(dir, { withFileTypes: true });
@@ -1074,7 +1116,7 @@ class GenerateDocumentService {
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory()) {
           await deleteFilesRecursively(fullPath);
-          await fsp.rmdir(fullPath).catch(() => { });
+          await fsp.rmdir(fullPath).catch(() => {});
         } else if (
           entry.name.endsWith(".pdf") ||
           entry.name.endsWith(".txt") ||
@@ -1098,17 +1140,29 @@ class GenerateDocumentService {
   }
 
   // Delete specific PDF & email template
-
-  async deletePDF(folder, name) {
-    const baseDir = path.join(GenerateDocumentService.GENERATED_DIR, folder);
-    const pdfPath = path.join(baseDir, name);
-    const txtPath = pdfPath.replace(/\.pdf$/, ".txt");
-
-    if (!fs.existsSync(pdfPath)) {
-      throw new Error("PDF not found");
-    }
+  async deletePDF(fileName) {
+    const walk = async (dir) => {
+      const entries = await fsp.readdir(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          const found = await walk(fullPath);
+          if (found) return found;
+        } else if (entry.isFile() && entry.name === fileName) {
+          return fullPath;
+        }
+      }
+      return null;
+    };
 
     try {
+      const pdfPath = await walk(GenerateDocumentService.GENERATED_DIR);
+      if (!pdfPath) {
+        throw new Error("PDF not found");
+      }
+
+      const txtPath = pdfPath.replace(/\.pdf$/, ".txt");
+
       await fsp.unlink(pdfPath);
       if (fs.existsSync(txtPath)) {
         await fsp.unlink(txtPath);

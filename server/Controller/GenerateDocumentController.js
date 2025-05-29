@@ -256,23 +256,38 @@ class GenerateDocumentController {
     try {
       const pdfs = await this.generateDocumentService.listGeneratedPDFs();
 
-      // Get unique folder IDs
-      const folderIds = [...new Set(pdfs.map((f) => f.folder))];
+      const folderIds = [
+        ...new Set(
+          pdfs
+            .map((f) => {
+              const folderPath = f.folder || "";
+              const parts = folderPath.split(/[/\\]/);
+              return parts.length > 1 ? parts[1] : null;
+            })
+            .filter(Boolean)
+        ),
+      ];
 
       const folderInfoMap = {};
       for (const id of folderIds) {
         try {
           const entry = await EmailTriggerQueries.getEmailTriggerById(id);
-          folderInfoMap[id] = entry?.uploadedSheetName;
+          folderInfoMap[id] = entry?.uploadedSheetName || "Unknown";
         } catch (e) {
           folderInfoMap[id] = "Unknown";
         }
       }
 
-      const pdfsWithOriginalNames = pdfs.map((file) => ({
-        ...file,
-        originalFileName: folderInfoMap[file.folder] || "Unknown",
-      }));
+      const pdfsWithOriginalNames = pdfs.map((file) => {
+        const folderPath = file.folder || "";
+        const parts = folderPath.split(/[/\\]/);
+        const id = parts.length > 1 ? parts[1] : null;
+
+        return {
+          ...file,
+          originalFileName: folderInfoMap[id] || "Unknown",
+        };
+      });
 
       res.json({ pdfs: pdfsWithOriginalNames });
     } catch (error) {
