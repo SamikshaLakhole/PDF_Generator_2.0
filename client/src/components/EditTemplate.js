@@ -36,7 +36,10 @@ function EditTemplate() {
   const handleAddCC = () => {
     const trimmed = ccInput.trim();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!trimmed) return;
+    if (!trimmed) {
+      setCcError("Please type an email address before adding.");
+      return;
+    }
     if (!emailRegex.test(trimmed)) {
       setCcError(`Invalid email format: ${trimmed}`);
       return;
